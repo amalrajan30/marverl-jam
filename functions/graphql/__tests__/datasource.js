@@ -1,29 +1,103 @@
+jest.mock("node-fetch")
+
+const fetch = require("node-fetch")
 const MarverlAPI = require("../datasource")
 
-const ds = new MarverlAPI()
+const { Response } = jest.requireActual("node-fetch")
+
 let mockRequest
-beforeEach(() => {
-  mockRequest = jest.fn()
-  ds.makeRequest = mockRequest
+
+describe("makeRequest", () => {
+  let ds
+  beforeEach(() => {
+    ds = new MarverlAPI()
+  })
+
+  it("should make request to correct url", async () => {
+    const data = { data: {} }
+    const response = new Response(JSON.stringify(data))
+    fetch.mockResolvedValueOnce(Promise.resolve(response))
+    const res = await ds.makeRequest({
+      path: "characters",
+      param: null,
+      skip: 0,
+    })
+		expect(res).toEqual({ data: {} })
+		expect(fetch.mock.calls[0][0]).toMatch(/characters/)
+	})
+	
+	it("should make request with character id", async () => {
+		await ds.makeRequest({
+			path: "characters/999",
+      param: null,
+      skip: 0,
+		})
+		expect(fetch.mock.calls[1][0]).toMatch(/characters\/999/)
+	})
+
+	it("should make request with params", async () => {
+		await ds.makeRequest({
+			path: "characters",
+			param: { name: "nameStartsWith", value: "iron" },
+			skip: 0
+		})
+		expect(fetch.mock.calls[2][0]).toMatch(/\?nameStartsWith=iron/)
+	})
 })
 
 describe("getAllCharecters", () => {
-  it("should transform the api response", async () => {
+  let ds
+  beforeEach(() => {
+    mockRequest = jest.fn()
+    ds = new MarverlAPI()
+    ds.makeRequest = mockRequest
     mockRequest.mockResolvedValueOnce(mockCharacterRequestResponse)
+  })
+  it("should transform the api response", async () => {
     const res = await ds.getAllCharecters()
 
     expect(res).toStrictEqual(mockCharacter)
-    expect(mockRequest).toBeCalledWith("characters")
+    expect(mockRequest).toBeCalledWith({
+      path: "characters",
+      param: null,
+      skip: 0,
+    })
+  })
+
+  it("should make request with search terms", async () => {
+    await ds.getAllCharecters("spider")
+
+    expect(mockRequest).toBeCalledWith({
+      path: "characters",
+      param: { name: "nameStartsWith", value: "spider" },
+      skip: 0,
+    })
+  })
+
+  it("should make request with offset", async () => {
+    await ds.getAllCharecters("iron", 5)
+
+    expect(mockRequest).toBeCalledWith({
+      path: "characters",
+      param: { name: "nameStartsWith", value: "iron" },
+      skip: 5,
+    })
   })
 })
 
 describe("getCharacter", () => {
+  let ds
+  beforeEach(() => {
+    mockRequest = jest.fn()
+    ds = new MarverlAPI()
+    ds.makeRequest = mockRequest
+  })
   it("should transform the response and call request with id", async () => {
     mockRequest.mockResolvedValueOnce(mockCharacterRequestResponse)
     const res = await ds.getCharacter(123)
 
     expect(res).toEqual(mockCharacter[0])
-    expect(mockRequest).toBeCalledWith("characters/123")
+    expect(mockRequest).toBeCalledWith({ path: "characters/123", param: null })
   })
 })
 

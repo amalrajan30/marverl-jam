@@ -51,7 +51,7 @@ const typedef = gql`
 	}
 
 	type Query {
-		characters: [Character]
+		characters(name: String): [Character]
 		character(id: ID!): Character
 		comics: [Comic]
 		series: [Series]
