@@ -1,9 +1,11 @@
 const MarverlAPI = require("../datasource")
 
-const mockRequest = jest.fn()
-
 const ds = new MarverlAPI()
-ds.makeRequest = mockRequest
+let mockRequest
+beforeEach(() => {
+  mockRequest = jest.fn()
+  ds.makeRequest = mockRequest
+})
 
 describe("getAllCharecters", () => {
   it("should transform the api response", async () => {
@@ -12,6 +14,16 @@ describe("getAllCharecters", () => {
 
     expect(res).toStrictEqual(mockCharacter)
     expect(mockRequest).toBeCalledWith("characters")
+  })
+})
+
+describe("getCharacter", () => {
+  it("should transform the response and call request with id", async () => {
+    mockRequest.mockResolvedValueOnce(mockCharacterRequestResponse)
+    const res = await ds.getCharacter(123)
+
+    expect(res).toEqual(mockCharacter[0])
+    expect(mockRequest).toBeCalledWith("characters/123")
   })
 })
 

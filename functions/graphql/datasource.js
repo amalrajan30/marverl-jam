@@ -40,6 +40,19 @@ class MarvelAPI {
       throw error
     }
   }
+
+  async getCharacter(id) {
+    const response = await this.makeRequest(`characters/${id}`)
+    const { data } = response
+    const result = data.results.map(item => ({
+      id: item.id || 0,
+      name: item.name,
+      discription: item.description,
+      thumbnail: item.thumbnail,
+      urls: item.urls,
+    }))
+    return result[0]
+  }
 }
 
 module.exports = MarvelAPI
